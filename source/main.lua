@@ -2,7 +2,7 @@ import "CoreLibs/object"
 import "CoreLibs/graphics"
 import "CoreLibs/sprites"
 import "CoreLibs/timer"
-import "CoreLibs/crank"
+import "CoreLibs/animation"
 
 local gfx <const> = playdate.graphics
 local snd <const> = playdate.sound
@@ -13,9 +13,14 @@ local playerSpeed = 4
 local playTimer = nil
 local playTime = 30 * 1000
 
-local coinSprite = nil
+local moneyImageTable
+local moneyAnim
+local moneySprite
 local score = 0
 local highScore = 0
+
+local randX
+local randY
 
 local function resetTimer()
     playTimer = playdate.timer.new(playTime, playTime, 0 , playdate.easingFunctions.linear)
@@ -28,9 +33,14 @@ local function updateHighScore()
 end
 
 local function moveCoin()
-    local randX = math.random(40, 360)
-    local randY = math.random(40, 200)
-    coinSprite:moveTo(randX, randY)
+    randX = math.random(40, 360)
+    randY = math.random(40, 200)
+    if moneySprite == nil then
+        moneySprite = gfx.sprite.addEmptyCollisionSprite(randX, randY, 32, 32)
+        
+    else
+        moneySprite:moveTo(randX+16, randY+16)
+    end
 end
 
 local function initialize()
@@ -41,11 +51,12 @@ local function initialize()
     playerSprite:setCollideRect(0, 0, playerSprite:getSize())
     playerSprite:add()
 
-    local coinImage = gfx.image.new("images/dollars_sign")
-    coinSprite = gfx.sprite.new(coinImage)
+    moneyImageTable, error = gfx.imagetable.new('images/money/money')
+    assert(moneyImageTable, error)
+
+    moneyAnim = gfx.animation.loop.new(50, moneyImageTable)
+
     moveCoin()
-    coinSprite:setCollideRect(0, 0, coinSprite:getSize())
-    coinSprite:add()
 
     local backgroundImage = gfx.image.new("images/background")
     gfx.sprite.setBackgroundDrawingCallback(
@@ -64,6 +75,8 @@ end
 initialize()
 
 function playdate.update()
+    gfx.clear()
+
     if playTimer.value == 0 then
         if playdate.buttonJustPressed(playdate.kButtonA) then
             resetTimer()
@@ -85,7 +98,7 @@ function playdate.update()
             playerSprite:moveBy(-playerSpeed, 0)
         end
 
-        local collisions = coinSprite:overlappingSprites()
+        local collisions = moneySprite:overlappingSprites()
         if #collisions >= 1 then
             sample:play()
             moveCoin()
@@ -94,6 +107,7 @@ function playdate.update()
     end
     playdate.timer.updateTimers()
 	gfx.sprite.update()
+    moneyAnim:draw(randX, randY)
 
     gfx.drawText("Time: " .. math.ceil(playTimer.value/1000), 5, 5)
     gfx.drawText("Money: " .. score, 320, 5)
