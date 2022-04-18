@@ -54,7 +54,7 @@ local function initialize()
     moneyImageTable, error = gfx.imagetable.new('images/money/money')
     assert(moneyImageTable, error)
 
-    moneyAnim = gfx.animation.loop.new(50, moneyImageTable)
+    moneyAnim = gfx.animation.loop.new(80, moneyImageTable)
 
     moveCoin()
 
